@@ -67,7 +67,10 @@ export const login = async(req,res)=> {
 
             //set token in the browser cookiess and send the res to the client
             res.cookie('accessToken', token, {
-                expires:token.expiresIn
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+                maxAge: 15 * 24 * 60 * 60 * 1000                
             }).status(200).json({
                 token,
                 data: {...rest},
