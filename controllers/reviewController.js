@@ -22,6 +22,7 @@ export const createReview  = async (req,res) =>{
         })
 
     } catch(err) {
+        console.error("Lỗi khi submit review:", err);
         res.status(500).json({
             success:false,
             message:'failed to submit',

@@ -12,6 +12,6 @@ router.delete('/:id', verifyUser, deleteUser)
 //get single User
 router.get('/:id', verifyUser, getSingleUser)
 //et all User
-router.get('/', verifyAdmin, getAllUser)
+router.get('/', getAllUser)
 
 export default router

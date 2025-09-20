@@ -12,6 +12,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,      
       required: true,
     },
+    tourName: {
+      type: String,      
+      required: true,
+    },
     fullName: {
       type: String,
       required: true,
@@ -27,8 +31,17 @@ const bookingSchema = new mongoose.Schema(
     bookAt: {
         type: Date,
         required:true
-    }
-
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'confirmed', 'cancelled', 'paid'],
+      default: 'pending',
+      required: true,
+    },
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+    },
   },
   { timestamps: true }
 );

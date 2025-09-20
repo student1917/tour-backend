@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true,
     },
     email: {
       type: String,
@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      // required: true,
     },
 
     photo: {
@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "user",
     },
+
+    isVerified: {
+      type:Boolean,
+      defautl:false,
+    },
+
   },
   { timestamps: true }
 );

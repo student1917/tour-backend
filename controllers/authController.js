@@ -1,36 +1,60 @@
 import User from '../models/User.js'
+import Otp from '../models/Otp.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { generateOtp, verifyOtp } from "../services/otpService.js"
 
-//user registration
-export const register = async(req,res)=> {
+
+export const register = async (req, res) => {
     try {
-        //hashing pwd
-        const salt = bcrypt.genSaltSync(10)
-        const hash = bcrypt.hashSync(req.body.password, salt)
-
-
-        const newUser = new User({
-            username: req.body.username,
-            email: req.body.email,
-            password: hash,
-            photo:req.body.photo
-        })
-        await newUser.save()
-        res.status(200).json({
+      const { username, email, password, photo } = req.body;
+  
+      const existingUser = await User.findOne({ email });
+  
+      if (existingUser) {
+        if (!existingUser.isVerified) {
+          await generateOtp(email, "register");
+          return res.status(200).json({
             success: true,
-            message:'Succesfully created',
-            data: newUser,
-        })
-        } catch (err) {
-            console.error("Errorr:", err.message);
-            res.status(500).json({                
-                success:false,
-                message:'Failed to create',            
-        })
+            message: "Account already exists but not verified. OTP resent.",
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Email already registered.",
+          });
+        }
+      }
+  
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+  
+      const newUser = new User({
+        username,
+        email,
+        password: hash,
+        photo,
+        isVerified: false,
+      });
+  
+      await newUser.save();
+  
+      await generateOtp(email, "register");
+  
+      res.status(200).json({
+        success: true,
+        message: "Successfully registered. Please verify your email with OTP.",
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({
+        success: false,
+        message: "Failed to register.",
+      });
     }
+  };
 
-}
+
 //user login
 export const login = async(req,res)=> {
     const email = req.body.email
@@ -38,18 +62,15 @@ export const login = async(req,res)=> {
     try {
         const user = await User.findOne({email})
 
-        //if user doesn't exist
         if(!user){
             return res.status(404).json({
                 success: false,
                 message: "User not found"
             })
         }
-        //if user is exist then check the pwd or compare the pwd
 
         const checkCorrectPassword = await bcrypt.compare(req.body.password, user.password)
 
-        //if pwd incorrect
 
         if (!checkCorrectPassword) {           
             return res.status(401).json({
@@ -59,13 +80,12 @@ export const login = async(req,res)=> {
         }
 
         const {password, role, ...rest} = user._doc
-        //create jwt token
-        const token = jwt.sign({id:user._id, role:user.role}, 
+
+        const token = jwt.sign({id:user._id, role:user.role, username:user.username}, 
             process.env.JWT_SECRET_KEY,
             {expiresIn:"15d"}
             );
 
-            //set token in the browser cookiess and send the res to the client
             res.cookie('accessToken', token, {
                 expires:token.expiresIn
             }).status(200).json({
@@ -82,3 +102,72 @@ export const login = async(req,res)=> {
         })
     }
 }
+
+export const verifyEmail = async (req, res) => {
+    try {
+      const { email, otp } = req.body;
+  
+      const isValid = await verifyOtp(email, otp, "register");
+      if (!isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired OTP.",
+        });
+      }
+  
+      await User.findOneAndUpdate(
+        { email },
+        { $set: { isVerified: true } }
+      );
+  
+      res.status(200).json({
+        success: true,
+        message: "Email verified successfully.",
+      });
+    } catch (err) {
+      console.error("Error in verifyEmail:", err.message);
+      res.status(500).json({
+        success: false,
+        message: "Verification failed.",
+      });
+    }
+  };
+
+
+export const forgotPassword = async (req, res) => {
+try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    await generateOtp(email, "forgot-password");
+    res.status(200).json({ success: true, message: "OTP sent to your email" });
+} catch (err) {
+    console.error("Error in forgotPassword:", err.message);
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
+}
+};
+
+
+export const resetPassword = async (req, res) => {
+try {
+    const { email, otp, newPassword } = req.body;
+
+    const isValid = await verifyOtp(email, otp, "forgot-password");
+    if (!isValid) {
+    return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(newPassword, salt);
+
+    await User.findOneAndUpdate({ email }, { $set: { password: hash } });
+
+    res.status(200).json({ success: true, message: "Password reset successfully" });
+} catch (err) {
+    console.error("Error in resetPassword:", err.message);
+    res.status(500).json({ success: false, message: "Failed to reset password" });
+}
+};

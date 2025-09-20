@@ -1,7 +1,8 @@
 import express from 'express'
 import { createTour, updateTour, deleteTour, getSingleTour, getAllTour, 
-    getTourBySearch, getFeaturedTour, getTourCount } from '../controllers/tourController.js'
-    import { verifyAdmin } from '../utils/verifyToken.js'
+    getTourBySearch, getFeaturedTour, getTourCount, getTourCountries, 
+    getTourSubregions} from '../controllers/tourController.js'
+import { verifyAdmin } from '../utils/verifyToken.js'
 
 const router = express.Router()
 
@@ -11,8 +12,6 @@ router.post('/', verifyAdmin, createTour)
 router.put('/:id', verifyAdmin, updateTour)
 //delete tour
 router.delete('/:id', verifyAdmin, deleteTour)
-//get single tour
-router.get('/:id', getSingleTour)
 //et all tour
 router.get('/', getAllTour)
 //get tour by search
@@ -21,4 +20,11 @@ router.get('/search/getTourBySearch', getTourBySearch)
 router.get('/search/getFeaturedTour', getFeaturedTour)
 //tour count
 router.get('/search/getTourCount', getTourCount)
+//get country
+router.get('/search/getTourCountries', getTourCountries)
+//get subregion
+router.get('/search/getTourSubregions', getTourSubregions )
+//get single tour
+router.get('/:id', getSingleTour)
+
 export default router

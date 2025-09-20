@@ -11,17 +11,17 @@ const tourSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: {
-      type: String,
+    country: {
+      type: mongoose.Types.ObjectId,
+      ref: "Country",
       required: true,
     },
-    distance: {
-      type: Number,
-      required: true,
-    },
-    photo: {
+    photos: [{
+      url: { type: String, required: true },
+      isThumbnail: { type: Boolean, default: false }
+    }],
+    imageId: {
       type: String,
-      required: true,
     },
     desc: {
       type: String,
@@ -51,4 +51,4 @@ const tourSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Tour", tourSchema);
+export default mongoose.model("Tour", tourSchema, "tours_v2");
