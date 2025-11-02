@@ -87,9 +87,15 @@ export const login = async(req,res)=> {
             );
 
             res.cookie('accessToken', token, {
-                expires:token.expiresIn
+                httpOnly: true,
+                // secure: process.env.NODE_ENV === "production",
+                // secure: process.env.NODE_ENV === "production" ? true : false,
+                secure: false,
+                sameSite: "lax",
+                // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",  
+                maxAge: 15 * 24 * 60 * 60 * 1000
             }).status(200).json({
-                token,
+                accessToken: token, 
                 data: {...rest},
                 role
             })        

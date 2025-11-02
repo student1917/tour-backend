@@ -38,13 +38,17 @@ export const googleAuth = async (req, res) => {
     res
       .cookie("accessToken", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 15 * 24 * 60 * 60 * 1000, // 15 ngày
+        // secure: process.env.NODE_ENV === "production",
+        // sameSite: "none",
+        secure: false,           
+        sameSite: "lax",         
+
+        maxAge: 15 * 24 * 60 * 60 * 1000, 
       })
       .status(200)
       .json({
         success: true,
+        accessToken: token,
         data: {
           id: user._id,
           username: user.username,

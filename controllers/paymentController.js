@@ -1,15 +1,17 @@
 import Payment from '../models/Payment.js';
 import Booking from '../models/Booking.js';
+import Tour from '../models/Tour.js';
 import axios from 'axios';
 import crypto from 'crypto';
-
+import { getIO } from '../utils/socket.js';
+import Notification from "../models/Notification.js";
 
 export const payWithCash = async(req, res) => {
     
     try {
         const {bookingId, amount} = req.body
 
-        const booking = await Booking.findById(bookingId).populate('user')
+        const booking = await Booking.findById(bookingId)
         if (!booking)
             return res.status(404).json({message:'Booking not found'})
 
@@ -31,9 +33,22 @@ export const payWithCash = async(req, res) => {
             booking.status = 'confirmed';
             await booking.save();
 
-            await Service.findByIdAndUpdate(booking.service, {
+            await Tour.findByIdAndUpdate(booking.tour, {
                 $inc: { bookedCount: 1 },
               });
+              
+            await Notification.create({
+              bookingId: booking._id,
+              customer: booking.fullName,
+              tourName: booking.tourName,
+            });
+
+            getIO().emit('new_booking', {
+              _id: booking._id,
+              customer: booking.fullName,
+              tourName: booking.tourName,
+              createdAt: booking.createdAt.getTime(),
+            });
 
             res.status(200).json({
                 success:true, 
@@ -111,6 +126,13 @@ export const createMomoPayment = async (req, res) => {
       status: 'pending',
     });
 
+    getIO().emit('new_booking', {
+      _id: bookingId,
+      customer: fullName,
+      tourName: tourName,
+      createdAt: createdAt.getTime(),
+    });
+
     return res.status(200).json({ payUrl: momoRes.data.payUrl });
   } catch (err) {
     console.error('[Momo Payment Error]:', err);
@@ -172,3 +194,31 @@ export const handleMomoIPN = async (req, res) => {
   };
 
 
+export const getMonthlyRevenue = async (req, res) => {
+  try {
+    const revenueByMonth = await Payment.aggregate([
+      { $match: { status: "success" } },
+      {
+        $group: {
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+          totalRevenue: { $sum: "$amount" },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ]);
+
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      totalRevenue: 0,
+    }));
+
+    revenueByMonth.forEach((item) => {
+      months[item._id.month - 1].totalRevenue = item.totalRevenue;
+    });
+
+    res.json(months); 
+  } catch (err) {
+    console.error("Error fetching monthly revenue:", err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};

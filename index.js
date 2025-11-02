@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import { initSocket } from './utils/socket.js';
+
 import tourRoute from './routes/tours.js'
 import userRoute from './routes/users.js'
 import authRoute from './routes/auth.js'
@@ -10,13 +12,16 @@ import reviewRoute from './routes/reviews.js'
 import bookingRoute from './routes/bookings.js'
 import uploadRoute from './routes/upload.js'
 import paymentRoute from './routes/payment.js'
-
+import notificationRoute from './routes/notification.js'
+import visitRoute from './routes/visit.js'
+import http from 'http'
 
 dotenv.config()
 const app = express()
 const port = process.env.PORT || 8000
 const corsOptions = {
-    origin:true, 
+    // origin:true, 
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials:true,
 }
 
@@ -46,10 +51,13 @@ app.use('/api/v1/review', reviewRoute)
 app.use('/api/v1/booking', bookingRoute)
 app.use('/api/v1/uploading', uploadRoute)
 app.use('/api/v1/payment', paymentRoute)
+app.use('/api/v1/notification', notificationRoute)
+app.use('/api/v1/visit', visitRoute)
 
+const server = http.createServer(app);
+initSocket(server);
 
-
-app.listen(port, () => {
+server.listen(port, () => {
     connect();
     console.log('server listening on port', port)
 })

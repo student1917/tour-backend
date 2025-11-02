@@ -8,9 +8,13 @@ const router = express.Router()
 //update User
 router.put('/:id', verifyUser, updateUser)
 //delete User
-router.delete('/:id', verifyUser, deleteUser)
+router.delete('/:id', verifyAdmin, deleteUser)
+// router.delete('/:id', deleteUser)
+
 //get single User
-router.get('/:id', verifyUser, getSingleUser)
+// router.get('/:id', verifyUser, getSingleUser)
+router.get('/:id', getSingleUser)
+
 //et all User
 router.get('/', getAllUser)
 

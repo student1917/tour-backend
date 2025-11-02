@@ -11,6 +11,7 @@ const paymentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Booking",
     required: true,
+    unique: true,
   },
   amount: {
     type: Number,
@@ -23,7 +24,7 @@ const paymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "paid", "failed"],
+    enum: ["confirmed","pending", "paid", "failed"],
     default: "pending",
   },
   momoResponse: {
